@@ -14849,7 +14849,7 @@
     "specialType": 0,
     "classSpecificity": 4,
     "group": 0,
-    "isIdol": false,
+    "isIdol": true,
     "tiers": [
       {
         "minRoll": 0.06,
@@ -18416,7 +18416,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.1,
@@ -18431,7 +18431,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.1,
@@ -18446,7 +18446,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 1,
@@ -18455,13 +18455,23 @@
     ]
   },
   {
+    "id": 1032,
+    "name": "Corrupted Affix 1032",
+    "type": "prefix",
+    "specialType": 6,
+    "classSpecificity": 0,
+    "group": 0,
+    "isIdol": false,
+    "tiers": []
+  },
+  {
     "id": 1033,
     "name": "Idol Minion Elemental Resistance",
     "type": "prefix",
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.05,
@@ -18476,7 +18486,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 25,
@@ -18491,7 +18501,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 1,
@@ -18506,7 +18516,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 1,
@@ -18521,7 +18531,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 3,
@@ -18536,7 +18546,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 4,
@@ -18551,7 +18561,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 5,
@@ -18566,7 +18576,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.01,
@@ -18581,7 +18591,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 3,
@@ -18596,7 +18606,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.05,
@@ -18611,7 +18621,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 1,
@@ -18626,7 +18636,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 1,
@@ -18641,7 +18651,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.01,
@@ -18656,7 +18666,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.02,
@@ -18671,7 +18681,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 15,
@@ -18686,7 +18696,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.03,
@@ -18701,7 +18711,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.05,
@@ -18716,7 +18726,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.02,
@@ -18731,7 +18741,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 3,
@@ -18746,7 +18756,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.03,
@@ -18761,7 +18771,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.02,
@@ -18776,7 +18786,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 25,
@@ -18791,7 +18801,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.05,
@@ -18806,7 +18816,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.05,
@@ -18821,7 +18831,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.040000003,
@@ -18836,7 +18846,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 2,
@@ -18851,7 +18861,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 5,
@@ -18866,7 +18876,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.040000003,
@@ -18881,7 +18891,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.02,
@@ -18896,7 +18906,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.02,
@@ -18911,7 +18921,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 1,
@@ -18926,7 +18936,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.02,
@@ -18941,7 +18951,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.03,
@@ -18956,7 +18966,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.01,
@@ -18971,7 +18981,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.02,
@@ -18986,7 +18996,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.02,
@@ -19001,7 +19011,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.03,
@@ -19010,13 +19020,23 @@
     ]
   },
   {
+    "id": 1070,
+    "name": "Corrupted Affix 1070",
+    "type": "prefix",
+    "specialType": 6,
+    "classSpecificity": 0,
+    "group": 0,
+    "isIdol": false,
+    "tiers": []
+  },
+  {
     "id": 1071,
     "name": "Idol Bees per 10 Seconds",
     "type": "prefix",
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.8,
@@ -19031,7 +19051,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 0.8,
@@ -19431,7 +19451,7 @@
     "specialType": 0,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": false,
+    "isIdol": true,
     "tiers": []
   },
   {
@@ -19957,7 +19977,7 @@
     "specialType": 0,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": false,
+    "isIdol": true,
     "tiers": []
   },
   {
@@ -19967,7 +19987,7 @@
     "specialType": 0,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": false,
+    "isIdol": true,
     "tiers": []
   },
   {
@@ -19987,7 +20007,7 @@
     "specialType": 6,
     "classSpecificity": 0,
     "group": 0,
-    "isIdol": true,
+    "isIdol": false,
     "tiers": [
       {
         "minRoll": 1,

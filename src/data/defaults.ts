@@ -60,6 +60,18 @@ export const HIDE_LEVEL_GATES = {
   twoBadAffixes: 40,
   /** Hide 1+ bad at T5+ — level 60+ */
   oneBadHighTier: 60,
-  /** Hide low total tiers — level 50+ */
-  lowTotalTiers: 50,
 } as const;
+
+/**
+ * Progressive total-tier hide thresholds.
+ * At each level gate, items with combined affix tiers below the threshold are hidden.
+ * Ramps from 6 at level 35 up to 16 at level 85 (+2 tiers per 10 levels).
+ */
+export const TOTAL_TIER_HIDE_GATES: readonly { level: number; minTiers: number }[] = [
+  { level: 35, minTiers: 6 },
+  { level: 45, minTiers: 8 },
+  { level: 55, minTiers: 10 },
+  { level: 65, minTiers: 12 },
+  { level: 75, minTiers: 14 },
+  { level: 85, minTiers: 16 },
+] as const;

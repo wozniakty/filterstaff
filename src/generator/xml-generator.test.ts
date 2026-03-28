@@ -94,7 +94,10 @@ describe("XML Generator", () => {
 
   it("generates no bad affix rules when bad list is empty", () => {
     const xml = generateFilterXml(makeConfig({ badAffixIds: [] }));
-    expect(xml).not.toContain("CharacterLevelCondition");
+    // Total-tier hides still produce CharacterLevelCondition,
+    // but no bad-affix-specific hide rules should exist
+    expect(xml).not.toContain("<minOnTheSameItem>3</minOnTheSameItem>");
+    expect(xml).not.toContain("<minOnTheSameItem>2</minOnTheSameItem>");
   });
 
   it("uses advanced=false for simple presence checks", () => {

@@ -8,7 +8,7 @@ import type {
 import { OTHER_CLASSES } from "../data/classes";
 import { ALL_IDOL_TYPES } from "../data/equipment-types";
 import { ALL_WEAPON_TYPES } from "../data/equipment-types";
-import { HIDE_LEVEL_GATES } from "../data/defaults";
+import { HIDE_LEVEL_GATES, TOTAL_TIER_HIDE_GATES } from "../data/defaults";
 import { Sound, MapIcon } from "../data/styling";
 import affixData from "../data/affixes.json";
 
@@ -368,7 +368,7 @@ function generateCorruptedGradient(
   return rules;
 }
 
-function generateLayer3Hides(
+function generateLayer3BadAffixHides(
   config: FilterConfig,
   startOrder: number
 ): string[] {
@@ -468,6 +468,39 @@ function generateLayer3Hides(
             100,
             "        "
           ),
+        ].join("\n"),
+        order: order++,
+      })
+    );
+  }
+
+  return rules;
+}
+
+function generateLayer3TotalTierHides(
+  allAffixIds: number[],
+  startOrder: number
+): string[] {
+  const rules: string[] = [];
+  let order = startOrder;
+
+  // Progressive total-tier hides — stricter gates checked first (higher priority)
+  // Iterate in reverse so the highest level/threshold rule gets the lowest order number.
+  for (let i = TOTAL_TIER_HIDE_GATES.length - 1; i >= 0; i--) {
+    const gate = TOTAL_TIER_HIDE_GATES[i];
+    rules.push(
+      ruleXml({
+        type: "HIDE",
+        conditions: [
+          affixConditionXml(
+            {
+              affixIds: allAffixIds,
+              combinedComparsion: "LESS_OR_EQUAL",
+              combinedComparsionValue: gate.minTiers,
+            },
+            "        "
+          ),
+          characterLevelConditionXml(gate.level, 100, "        "),
         ].join("\n"),
         order: order++,
       })
@@ -617,13 +650,21 @@ export function generateFilterXml(config: FilterConfig): string {
   );
   nextOrder += layer4Rules.length;
 
-  // Corrupted gradient: above hides, below BD rescues
+  // Layer 3b: Progressive total-tier hides (highest priority among Layer 3).
+  // Sits above corrupted gradient so low-tier corrupted items (uncraftable)
+  // get hidden rather than uselessly colored.
+  const layer3bRules = generateLayer3TotalTierHides(allAffixIds, nextOrder);
+  nextOrder += layer3bRules.length;
+
+  // Corrupted gradient: decent corrupted items get gradient coloring.
+  // Below total-tier hides (junk corrupted hidden) but above bad-affix hides
+  // (bad affix composition is irrelevant on uncraftable items).
   const corruptedRules = generateCorruptedGradient(tiers, allAffixIds, config.bottomTierColor, nextOrder);
   nextOrder += corruptedRules.length;
 
-  // Layer 3: Hide rules
-  const layer3Rules = generateLayer3Hides(config, nextOrder);
-  nextOrder += layer3Rules.length;
+  // Layer 3a: Class/weapon/rarity/bad-affix hides (below corrupted gradient)
+  const layer3aRules = generateLayer3BadAffixHides(config, nextOrder);
+  nextOrder += layer3aRules.length;
 
   // Layer 2: BD markers
   const layer2Rules = generateLayer2BdMarkers(
@@ -648,8 +689,9 @@ export function generateFilterXml(config: FilterConfig): string {
     layer0Rule,
     ...layer1Rules,
     ...layer2Rules,
-    ...layer3Rules,
+    ...layer3aRules,
     ...corruptedRules,
+    ...layer3bRules,
     ...layer4Rules,
   ];
 
