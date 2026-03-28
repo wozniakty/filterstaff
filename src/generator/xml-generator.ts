@@ -4,7 +4,6 @@ import type {
   BeamSize,
   EquipmentType,
   IdolType,
-  PlayerClass,
 } from "../types";
 import { OTHER_CLASSES } from "../data/classes";
 import { ALL_IDOL_TYPES } from "../data/equipment-types";
