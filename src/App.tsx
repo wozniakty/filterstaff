@@ -17,6 +17,7 @@ export default function App() {
     cycleAffixCategory,
     setAffixCategory,
     setAffixCategoryBulk,
+    importConfig,
   } = useFilterConfig();
 
   return (
@@ -76,7 +77,7 @@ export default function App() {
             onSetCategoryBulk={setAffixCategoryBulk}
           />
         )}
-        {step === "export" && <ExportStep config={config} />}
+        {step === "export" && <ExportStep config={config} onImportConfig={importConfig} />}
       </div>
     </div>
   );

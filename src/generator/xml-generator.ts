@@ -9,6 +9,7 @@ import { OTHER_CLASSES } from "../data/classes";
 import { ALL_IDOL_TYPES } from "../data/equipment-types";
 import { ALL_WEAPON_TYPES } from "../data/equipment-types";
 import { HIDE_LEVEL_GATES } from "../data/defaults";
+import { Sound, MapIcon } from "../data/styling";
 import affixData from "../data/affixes.json";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -138,9 +139,9 @@ function ruleXml(opts: RuleOpts): string {
     color = 0,
     emphasized = false,
     nameOverride = "",
-    soundId = 0,
-    mapIconId = 0,
-    beamOverride = false,
+    soundId = 1,
+    mapIconId = 1,
+    beamOverride = true,
     beamSize = "NONE",
     beamColor = 0,
     order,
@@ -565,16 +566,20 @@ function generateLayer4SafetyNetsAndRescues(
     }
   }
 
-  // Show all idols
+  // Show all idols — keep game defaults for styling
   rules.push(
     ruleXml({
       type: "SHOW",
       conditions: subTypeConditionXml(ALL_IDOL_TYPES, "        "),
+      soundId: Sound.DEFAULT,
+      mapIconId: MapIcon.DEFAULT,
+      beamOverride: false,
       order: order++,
     })
   );
 
-  // Show unique/set/legendary/exalted (absolute top safety net)
+  // Show unique/set/legendary (absolute top safety net)
+  // Uses DEFAULT to preserve game's native styling
   rules.push(
     ruleXml({
       type: "SHOW",
@@ -582,6 +587,9 @@ function generateLayer4SafetyNetsAndRescues(
         ["UNIQUE", "SET", "LEGENDARY"],
         "        "
       ),
+      soundId: Sound.DEFAULT,
+      mapIconId: MapIcon.DEFAULT,
+      beamOverride: false,
       order: order++,
     })
   );

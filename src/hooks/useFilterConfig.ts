@@ -119,6 +119,18 @@ export function useFilterConfig() {
     [getAffixCategory, setAffixCategory]
   );
 
+  const importConfig = useCallback((imported: Partial<FilterConfig>) => {
+    setConfig((prev) => ({
+      ...prev,
+      ...DEFAULT_FILTER_CONFIG,
+      name: imported.name ?? prev.name,
+      playerClass: imported.playerClass ?? prev.playerClass,
+      weaponTypes: imported.weaponTypes ?? prev.weaponTypes,
+      buildDefiningAffixIds: imported.buildDefiningAffixIds ?? prev.buildDefiningAffixIds,
+      badAffixIds: imported.badAffixIds ?? prev.badAffixIds,
+    }));
+  }, []);
+
   return {
     config,
     setConfig,
@@ -130,5 +142,6 @@ export function useFilterConfig() {
     setAffixCategoryBulk,
     getAffixCategory,
     cycleAffixCategory,
+    importConfig,
   };
 }

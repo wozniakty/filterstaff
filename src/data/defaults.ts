@@ -1,15 +1,16 @@
 import type { FilterConfig, GradientTier } from "../types";
+import { ItemColor, Sound, MapIcon, BeamColor } from "./styling";
 
 /**
- * Default 5-tier gradient from FEATURE_DESIGN.md.
- * Exact colors TBD through playtesting — using a warm ramp for now.
+ * Default 5-tier gradient.
+ * BLUE → YELLOW → PURPLE → MAGENTA → PINK
  */
 export const DEFAULT_GRADIENT_TIERS: GradientTier[] = [
-  { threshold: 6, color: 12 },  // > 6 total tiers  → BLUE
-  { threshold: 10, color: 3 },  // > 10 total tiers → YELLOW
-  { threshold: 14, color: 11 }, // > 14 total tiers → PURPLE
-  { threshold: 18, color: 9 },  // > 18 total tiers → MAGENTA
-  { threshold: 22, color: 8 },  // > 22 total tiers → PINK (top tier, hilarious but bright)
+  { threshold: 6, color: ItemColor.BLUE },
+  { threshold: 10, color: ItemColor.YELLOW },
+  { threshold: 14, color: ItemColor.PURPLE },
+  { threshold: 18, color: ItemColor.MAGENTA },
+  { threshold: 22, color: ItemColor.PINK },
 ];
 
 /** Default filter configuration */
@@ -23,33 +24,33 @@ export const DEFAULT_FILTER_CONFIG: FilterConfig = {
     tiers: DEFAULT_GRADIENT_TIERS,
   },
   bdMarkerStyle: {
-    mapIconId: 7,    // EXALTED icon
+    mapIconId: MapIcon.NONE,
     beamSize: "LARGE",
-    beamColor: 4,    // YELLOW beam
-    soundId: 0,      // No sound for lower tiers
-    topTierSoundId: 2, // SHING for top 2 tiers
-    topTierCount: 2,   // How many top tiers get the sound
+    beamColor: BeamColor.YELLOW,
+    soundId: Sound.NONE,
+    topTierSoundId: Sound.SHING,
+    topTierCount: 2,
   },
   bdT6Style: {
-    mapIconId: 7,    // EXALTED icon
+    mapIconId: MapIcon.EXALTED,
     beamSize: "VERYLARGE",
-    beamColor: 7,    // ORANGE beam
-    soundId: 9,      // INSPIRATION - any exalted BD needs attention
+    beamColor: BeamColor.ORANGE,
+    soundId: Sound.INSPIRATION,
   },
   bdT7Style: {
-    mapIconId: 7,    // EXALTED icon
+    mapIconId: MapIcon.EXALTED,
     beamSize: "LARGEST",
-    beamColor: 10,   // RED beam
-    soundId: 6,      // BEGIN - exciting!
+    beamColor: BeamColor.RED,
+    soundId: Sound.BEGIN,
   },
-  bottomTierColor: 1, // GRAY — "has an affix but below gradient threshold"
-  corruptedColor: 14, // TURQUOISE
+  bottomTierColor: ItemColor.GRAY,
+  corruptedColor: ItemColor.TURQUOISE,
   filterIcon: 4,
   filterIconColor: 10,
 };
 
 /**
- * Hide rule level gates from FEATURE_DESIGN.md.
+ * Hide rule level gates.
  * These define when progressive hide rules kick in.
  */
 export const HIDE_LEVEL_GATES = {

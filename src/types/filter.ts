@@ -1,3 +1,10 @@
+import type {
+  ItemColorValue,
+  SoundValue,
+  MapIconValue,
+  BeamColorValue,
+} from "../data/styling";
+
 /** User-facing configuration that drives XML generation */
 export interface FilterConfig {
   name: string;
@@ -17,9 +24,9 @@ export interface FilterConfig {
   /** Visual treatment for BD T7 rescues */
   bdT7Style: BdRescueStyle;
   /** Color for items with affixes but below gradient threshold */
-  bottomTierColor: number;
+  bottomTierColor: ItemColorValue;
   /** Color used for corrupted items */
-  corruptedColor: number;
+  corruptedColor: ItemColorValue;
   filterIcon: number;
   filterIconColor: number;
 }
@@ -31,27 +38,26 @@ export interface GradientConfig {
 export interface GradientTier {
   /** Total affix tier sum threshold (combinedComparsionValue) */
   threshold: number;
-  /** Item recolor ID */
-  color: number;
+  /** Item recolor */
+  color: ItemColorValue;
 }
 
 export interface BdMarkerStyle {
-  mapIconId: number;
+  mapIconId: MapIconValue;
   beamSize: BeamSize;
-  beamColor: number;
-  soundId: number;
+  beamColor: BeamColorValue;
+  soundId: SoundValue;
   /** Sound to play for top-tier BD items */
-  topTierSoundId: number;
+  topTierSoundId: SoundValue;
   /** How many of the highest gradient tiers get the topTierSound */
   topTierCount: number;
 }
 
 export interface BdRescueStyle {
-  mapIconId: number;
+  mapIconId: MapIconValue;
   beamSize: BeamSize;
-  beamColor: number;
-  /** Only for T7 */
-  soundId: number;
+  beamColor: BeamColorValue;
+  soundId: SoundValue;
 }
 
 export type PlayerClass =
