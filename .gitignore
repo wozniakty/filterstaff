@@ -1,0 +1,16 @@
+node_modules/
+dist/
+*.local
+
+# Reference files (large XMLs, raw game data)
+reference/
+
+# Scraper scripts and raw scraped data
+scripts/
+src/data/MasterAffixesList.json
+src/data/affixes-tunklab.json
+src/data/affixes-tunklab-checkpoint.json
+
+# Old app
+OLD APP - DEPRECATED/
+.claude
