@@ -11,6 +11,8 @@ import { ALL_WEAPON_TYPES } from "../data/equipment-types";
 import { HIDE_LEVEL_GATES, TOTAL_TIER_HIDE_GATES } from "../data/defaults";
 import { Sound, MapIcon } from "../data/styling";
 import affixData from "../data/affixes.json";
+import categoryData from "../data/affix-categories.json";
+import type { PlayerClass } from "../types";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -27,6 +29,21 @@ function getAllAffixIds(): number[] {
   return affixData
     .filter((a: { isIdol: boolean }) => !a.isIdol)
     .map((a: { id: number }) => a.id);
+}
+
+/** Affix IDs from class-specific categories that don't match the player's class */
+function getOtherClassAffixIds(playerClass: PlayerClass): number[] {
+  const classUpper = playerClass.toUpperCase();
+  const ids: number[] = [];
+  for (const cat of categoryData as { name: string; ids: number[] }[]) {
+    if (
+      cat.name.startsWith("CLASS SPECIFIC - ") &&
+      !cat.name.endsWith(classUpper)
+    ) {
+      ids.push(...cat.ids);
+    }
+  }
+  return ids;
 }
 
 // ─── Rule XML Building Blocks ───────────────────────────────────────────────
@@ -636,6 +653,13 @@ export function generateFilterXml(config: FilterConfig): string {
   const allAffixIds = getAllAffixIds();
   const tiers = config.gradient.tiers;
 
+  // Effective bad affix list: user selections + other-class affixes
+  const otherClassIds = getOtherClassAffixIds(config.playerClass);
+  const effectiveBadIds = [
+    ...new Set([...config.badAffixIds, ...otherClassIds]),
+  ];
+  const effectiveConfig = { ...config, badAffixIds: effectiveBadIds };
+
   // Build all rules, tracking order.
   // Order 0 = highest priority (top), highest order = lowest priority (bottom).
   // We build bottom-up: Layer 0 gets the highest order number.
@@ -644,7 +668,7 @@ export function generateFilterXml(config: FilterConfig): string {
 
   // Layer 4: Safety nets & rescues (highest priority = lowest order numbers)
   const layer4Rules = generateLayer4SafetyNetsAndRescues(
-    config,
+    effectiveConfig,
     allAffixIds,
     nextOrder
   );
@@ -663,7 +687,7 @@ export function generateFilterXml(config: FilterConfig): string {
   nextOrder += corruptedRules.length;
 
   // Layer 3a: Class/weapon/rarity/bad-affix hides (below corrupted gradient)
-  const layer3aRules = generateLayer3BadAffixHides(config, nextOrder);
+  const layer3aRules = generateLayer3BadAffixHides(effectiveConfig, nextOrder);
   nextOrder += layer3aRules.length;
 
   // Layer 2: BD markers

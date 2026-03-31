@@ -69,6 +69,7 @@ export default function App() {
         )}
         {step === "affixes" && (
           <AffixPicker
+            playerClass={config.playerClass}
             buildDefiningIds={config.buildDefiningAffixIds}
             badIds={config.badAffixIds}
             getCategory={getAffixCategory}

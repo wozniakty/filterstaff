@@ -92,12 +92,11 @@ describe("XML Generator", () => {
     expect(xml).toContain("<minimumLvl>60</minimumLvl>");
   });
 
-  it("generates no bad affix rules when bad list is empty", () => {
+  it("auto-includes other-class affixes as bad even when bad list is empty", () => {
     const xml = generateFilterXml(makeConfig({ badAffixIds: [] }));
-    // Total-tier hides still produce CharacterLevelCondition,
-    // but no bad-affix-specific hide rules should exist
-    expect(xml).not.toContain("<minOnTheSameItem>3</minOnTheSameItem>");
-    expect(xml).not.toContain("<minOnTheSameItem>2</minOnTheSameItem>");
+    // Other-class affixes are auto-added to bad list, so bad-affix rules exist
+    expect(xml).toContain("<minOnTheSameItem>3</minOnTheSameItem>");
+    expect(xml).toContain("<minOnTheSameItem>2</minOnTheSameItem>");
   });
 
   it("uses advanced=false for simple presence checks", () => {

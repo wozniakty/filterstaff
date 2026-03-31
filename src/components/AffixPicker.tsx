@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
-import type { Affix, AffixCategory } from "../types";
+import type { Affix, AffixCategory, PlayerClass } from "../types";
 import affixData from "../data/affixes.json";
 import categoryData from "../data/affix-categories.json";
 
 interface Props {
+  playerClass: PlayerClass;
   buildDefiningIds: number[];
   badIds: number[];
   getCategory: (id: number) => AffixCategory;
@@ -31,18 +32,33 @@ interface CategoryGroup {
   affixes: Affix[];
 }
 
-function buildCategoryGroups(allAffixes: Affix[]): CategoryGroup[] {
+function buildCategoryGroups(
+  allAffixes: Affix[],
+  playerClass: PlayerClass
+): CategoryGroup[] {
   const affixMap = new Map(allAffixes.map((a) => [a.id, a]));
   const categorized = new Set<number>();
 
   const idolSections = new Set(["IDOLS"]);
+  const classUpper = playerClass.toUpperCase();
+  const allCats = categoryData as { name: string; ids: number[] }[];
 
-  const groups: CategoryGroup[] = (
-    categoryData as { name: string; ids: number[] }[]
-  )
+  // Mark all categorized IDs upfront so filtered-out categories
+  // (idols, other-class) don't leak into uncategorized
+  for (const cat of allCats) {
+    cat.ids.forEach((id) => categorized.add(id));
+  }
+
+  const groups: CategoryGroup[] = allCats
     .filter((cat) => {
       const section = cat.name.split(" - ")[0] || cat.name;
-      return !idolSections.has(section);
+      if (idolSections.has(section)) return false;
+      if (
+        cat.name.startsWith("CLASS SPECIFIC - ") &&
+        !cat.name.endsWith(classUpper)
+      )
+        return false;
+      return true;
     })
     .map((cat) => {
       const parts = cat.name.split(" - ");
@@ -51,7 +67,6 @@ function buildCategoryGroups(allAffixes: Affix[]): CategoryGroup[] {
       const affixes = cat.ids
         .map((id) => affixMap.get(id))
         .filter(Boolean) as Affix[];
-      cat.ids.forEach((id) => categorized.add(id));
       return { name: cat.name, section, subCategory, affixes };
     });
 
@@ -72,6 +87,7 @@ function buildCategoryGroups(allAffixes: Affix[]): CategoryGroup[] {
 }
 
 export function AffixPicker({
+  playerClass,
   buildDefiningIds,
   badIds,
   getCategory,
@@ -85,7 +101,10 @@ export function AffixPicker({
   );
 
   const allAffixes = affixData as Affix[];
-  const groups = useMemo(() => buildCategoryGroups(allAffixes), [allAffixes]);
+  const groups = useMemo(
+    () => buildCategoryGroups(allAffixes, playerClass),
+    [allAffixes, playerClass]
+  );
 
   const filteredGroups = useMemo(() => {
     const term = search.toLowerCase();
