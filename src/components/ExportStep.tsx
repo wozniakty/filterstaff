@@ -40,6 +40,7 @@ export function ExportStep({ config, onImportConfig }: Props) {
         weaponTypes: config.weaponTypes,
         buildDefiningAffixIds: config.buildDefiningAffixIds,
         badAffixIds: config.badAffixIds,
+        customRules: config.customRules,
       },
       null,
       2
@@ -61,6 +62,7 @@ export function ExportStep({ config, onImportConfig }: Props) {
         weaponTypes: config.weaponTypes,
         buildDefiningAffixIds: config.buildDefiningAffixIds,
         badAffixIds: config.badAffixIds,
+        customRules: config.customRules,
       },
       null,
       2
@@ -106,6 +108,7 @@ export function ExportStep({ config, onImportConfig }: Props) {
         />
         <Stat label="Bad" value={config.badAffixIds.length} />
         <Stat label="Weapons" value={config.weaponTypes.length} />
+        <Stat label="Custom" value={config.customRules.length} />
       </div>
 
       {/* Filter XML Export */}

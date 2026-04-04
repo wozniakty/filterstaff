@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useFilterConfig } from "./hooks/useFilterConfig";
 import { ClassWeaponStep } from "./components/ClassWeaponStep";
 import { AffixPicker } from "./components/AffixPicker";
+import { CustomRulesStep } from "./components/CustomRulesStep";
 import { ExportStep } from "./components/ExportStep";
 
-type Step = "class" | "affixes" | "export";
+type Step = "class" | "affixes" | "custom" | "export";
 
 export default function App() {
   const [step, setStep] = useState<Step>("class");
@@ -18,6 +19,8 @@ export default function App() {
     setAffixCategory,
     setAffixCategoryBulk,
     importConfig,
+    setCustomRules,
+    clearCustomRules,
   } = useFilterConfig();
 
   return (
@@ -29,7 +32,8 @@ export default function App() {
           [
             ["class", "1. Class & Weapons"],
             ["affixes", "2. Affixes"],
-            ["export", "3. Export"],
+            ["custom", "3. Custom Rules"],
+            ["export", "4. Export"],
           ] as const
         ).map(([key, label]) => (
           <button
@@ -78,7 +82,16 @@ export default function App() {
             onSetCategoryBulk={setAffixCategoryBulk}
           />
         )}
-        {step === "export" && <ExportStep config={config} onImportConfig={importConfig} />}
+        {step === "custom" && (
+          <CustomRulesStep
+            customRules={config.customRules}
+            onSetCustomRules={setCustomRules}
+            onClearCustomRules={clearCustomRules}
+          />
+        )}
+        {step === "export" && (
+          <ExportStep config={config} onImportConfig={importConfig} />
+        )}
       </div>
     </div>
   );

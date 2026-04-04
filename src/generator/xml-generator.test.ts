@@ -22,10 +22,10 @@ describe("XML Generator", () => {
     expect(xml).toContain("<conditions />");
   });
 
-  it("includes safety net for unique/set/legendary", () => {
+  it("includes safety net for set/legendary (unique handled by LP gradient)", () => {
     const xml = generateFilterXml(DEFAULT_FILTER_CONFIG);
-    expect(xml).toContain("UNIQUE SET LEGENDARY");
-    expect(xml).not.toContain("UNIQUE SET LEGENDARY EXALTED");
+    expect(xml).toContain("<rarity>SET LEGENDARY</rarity>");
+    expect(xml).not.toContain("<rarity>UNIQUE SET LEGENDARY</rarity>");
   });
 
   it("includes idol show rule with IDOL_ALTAR", () => {
@@ -77,10 +77,12 @@ describe("XML Generator", () => {
     const xml = generateFilterXml(
       makeConfig({ buildDefiningAffixIds: [] })
     );
-    // No BD-specific beam sizes (LARGE/VERYLARGE/LARGEST only come from BD rules)
-    expect(xml).not.toContain("<BeamSizeOverride>LARGE</BeamSizeOverride>");
+    // No BD-specific beams (VERYLARGE only comes from BD T6 rescue)
     expect(xml).not.toContain("<BeamSizeOverride>VERYLARGE</BeamSizeOverride>");
-    expect(xml).not.toContain("<BeamSizeOverride>LARGEST</BeamSizeOverride>");
+    // BD marker and BD T7 rescue names should not appear
+    expect(xml).not.toContain("BD marker:");
+    expect(xml).not.toContain("BD T6+ rescue:");
+    expect(xml).not.toContain("BD T7 rescue:");
   });
 
   it("generates bad affix hide rules with level gates", () => {
@@ -130,12 +132,136 @@ describe("XML Generator", () => {
     expect(xml).toContain("<maxLvl_deprecated>");
   });
 
+  it("generates nameOverride on all rules", () => {
+    const xml = generateFilterXml(DEFAULT_FILTER_CONFIG);
+    // Every Rule should have a nameOverride (non-empty)
+    const ruleCount = (xml.match(/<Rule>/g) || []).length;
+    const nameCount = (xml.match(/<nameOverride>[^<]+<\/nameOverride>/g) || []).length;
+    expect(nameCount).toBe(ruleCount);
+  });
+
+  it("generates unique LP/WW gradient tiers", () => {
+    const xml = generateFilterXml(DEFAULT_FILTER_CONFIG);
+    // PotentialCondition should appear for each LP tier
+    expect(xml).toContain("PotentialCondition");
+    expect(xml).toContain("<MinLegendaryPotential>3</MinLegendaryPotential>");
+    expect(xml).toContain("<MinLegendaryPotential>2</MinLegendaryPotential>");
+    expect(xml).toContain("<MinLegendaryPotential>1</MinLegendaryPotential>");
+    expect(xml).toContain("<MinWeaversWill>20</MinWeaversWill>");
+    expect(xml).toContain("<MinWeaversWill>17</MinWeaversWill>");
+    expect(xml).toContain("<MinWeaversWill>14</MinWeaversWill>");
+  });
+
+  it("generates unique fallback rule for 0LP uniques", () => {
+    const xml = generateFilterXml(DEFAULT_FILTER_CONFIG);
+    expect(xml).toContain("Unique: fallback (all uniques)");
+  });
+
+  it("unique LP tiers sit above BD rescues in priority", () => {
+    const xml = generateFilterXml(
+      makeConfig({ buildDefiningAffixIds: [50] })
+    );
+    const uniqueOrder = xml.match(/Unique: 3\+ LP[\s\S]*?<Order>(\d+)<\/Order>/);
+    const bdOrder = xml.match(/BD T6\+ rescue[\s\S]*?<Order>(\d+)<\/Order>/);
+    expect(uniqueOrder).not.toBeNull();
+    expect(bdOrder).not.toBeNull();
+    // Higher order = higher priority (checked first)
+    expect(Number(uniqueOrder![1])).toBeGreaterThan(Number(bdOrder![1]));
+  });
+
   it("uses combinedComparsion=ANY for presence-only checks", () => {
     const xml = generateFilterXml(DEFAULT_FILTER_CONFIG);
     // Bottom tier gradient has no threshold, should use ANY
     expect(xml).toContain("<combinedComparsion>ANY</combinedComparsion>");
     // And MORE for actual thresholds
     expect(xml).toContain("<combinedComparsion>MORE</combinedComparsion>");
+  });
+
+  it("includes custom rules sentinel markers", () => {
+    const xml = generateFilterXml(DEFAULT_FILTER_CONFIG);
+    expect(xml).toContain("--- CUSTOM RULES START ---");
+    expect(xml).toContain("--- CUSTOM RULES END ---");
+  });
+
+  it("sentinel rules are disabled", () => {
+    const xml = generateFilterXml(DEFAULT_FILTER_CONFIG);
+    // Find sentinel rules and check isEnabled
+    const startSentinel = xml.match(
+      /--- CUSTOM RULES START ---[\s\S]*?<\/Rule>/
+    );
+    const endSentinel = xml.match(
+      /--- CUSTOM RULES END ---[\s\S]*?<\/Rule>/
+    );
+    expect(startSentinel).not.toBeNull();
+    expect(endSentinel).not.toBeNull();
+    // Walk backwards from nameOverride to find the isEnabled in the same Rule
+    const startRule = xml.slice(
+      xml.lastIndexOf("<Rule>", xml.indexOf("--- CUSTOM RULES START ---")),
+      xml.indexOf("</Rule>", xml.indexOf("--- CUSTOM RULES START ---")) + 7
+    );
+    expect(startRule).toContain("<isEnabled>false</isEnabled>");
+  });
+
+  it("sentinels sit above unique gradient in priority", () => {
+    const xml = generateFilterXml(DEFAULT_FILTER_CONFIG);
+    const startOrder = xml.match(
+      /--- CUSTOM RULES START ---[\s\S]*?<Order>(\d+)<\/Order>/
+    );
+    const uniqueOrder = xml.match(
+      /Unique: 3\+ LP[\s\S]*?<Order>(\d+)<\/Order>/
+    );
+    expect(startOrder).not.toBeNull();
+    expect(uniqueOrder).not.toBeNull();
+    expect(Number(startOrder![1])).toBeGreaterThan(Number(uniqueOrder![1]));
+  });
+
+  it("sentinels sit above safety nets in priority", () => {
+    const xml = generateFilterXml(DEFAULT_FILTER_CONFIG);
+    const startOrder = xml.match(
+      /--- CUSTOM RULES START ---[\s\S]*?<Order>(\d+)<\/Order>/
+    );
+    const safetyOrder = xml.match(
+      /Show all set[\s\S]*?<Order>(\d+)<\/Order>/
+    );
+    expect(startOrder).not.toBeNull();
+    expect(safetyOrder).not.toBeNull();
+    expect(Number(startOrder![1])).toBeGreaterThan(Number(safetyOrder![1]));
+  });
+
+  it("includes stored custom rules between sentinels with correct Order values", () => {
+    const customRule = `    <Rule>
+      <type>SHOW</type>
+      <conditions />
+      <recolor>true</recolor>
+      <color>5</color>
+      <isEnabled>true</isEnabled>
+      <levelDependent_deprecated>false</levelDependent_deprecated>
+      <minLvl_deprecated>0</minLvl_deprecated>
+      <maxLvl_deprecated>0</maxLvl_deprecated>
+      <emphasized>false</emphasized>
+      <nameOverride>Test Custom</nameOverride>
+      <SoundId>1</SoundId>
+      <MapIconId>1</MapIconId>
+      <BeamOverride>true</BeamOverride>
+      <BeamSizeOverride>NONE</BeamSizeOverride>
+      <BeamColorOverride>0</BeamColorOverride>
+    </Rule>`;
+
+    const xml = generateFilterXml(makeConfig({ customRules: [customRule] }));
+    expect(xml).toContain("Test Custom");
+
+    // Verify Order is between sentinels
+    const startOrder = Number(
+      xml.match(/--- CUSTOM RULES START ---[\s\S]*?<Order>(\d+)<\/Order>/)![1]
+    );
+    const customOrder = Number(
+      xml.match(/Test Custom[\s\S]*?<Order>(\d+)<\/Order>/)![1]
+    );
+    const endOrder = Number(
+      xml.match(/--- CUSTOM RULES END ---[\s\S]*?<Order>(\d+)<\/Order>/)![1]
+    );
+    expect(customOrder).toBeGreaterThan(startOrder);
+    expect(customOrder).toBeLessThan(endOrder);
   });
 });
 

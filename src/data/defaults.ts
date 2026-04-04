@@ -1,4 +1,4 @@
-import type { FilterConfig, GradientTier } from "../types";
+import type { FilterConfig, GradientTier, UniqueLpTier } from "../types";
 import { ItemColor, Sound, MapIcon, BeamColor } from "./styling";
 
 /**
@@ -11,6 +11,41 @@ export const DEFAULT_GRADIENT_TIERS: GradientTier[] = [
   { threshold: 14, color: ItemColor.PURPLE },
   { threshold: 18, color: ItemColor.MAGENTA },
   { threshold: 22, color: ItemColor.PINK },
+];
+
+/**
+ * Default unique LP/WW gradient tiers (highest LP first = highest priority).
+ * 3LP/20WW → big fanfare, 2LP/17WW → medium, 1LP/14WW → subtle.
+ * Uniques below these thresholds still show via the fallback rule.
+ */
+export const DEFAULT_UNIQUE_LP_TIERS: UniqueLpTier[] = [
+  {
+    minLp: 3,
+    minWw: 20,
+    emphasized: true,
+    soundId: Sound.BEGIN,
+    mapIconId: MapIcon.UNIQUE,
+    beamSize: "LARGEST",
+    beamColor: BeamColor.ORANGE,
+  },
+  {
+    minLp: 2,
+    minWw: 17,
+    emphasized: true,
+    soundId: Sound.SHING,
+    mapIconId: MapIcon.UNIQUE,
+    beamSize: "LARGE",
+    beamColor: BeamColor.YELLOW,
+  },
+  {
+    minLp: 1,
+    minWw: 14,
+    emphasized: false,
+    soundId: Sound.DEFAULT,
+    mapIconId: MapIcon.DEFAULT,
+    beamSize: "NONE",
+    beamColor: BeamColor.WHITE,
+  },
 ];
 
 /** Default filter configuration */
@@ -43,10 +78,12 @@ export const DEFAULT_FILTER_CONFIG: FilterConfig = {
     beamColor: BeamColor.RED,
     soundId: Sound.BEGIN,
   },
+  uniqueLpTiers: DEFAULT_UNIQUE_LP_TIERS,
   bottomTierColor: ItemColor.GRAY,
   corruptedColor: ItemColor.TURQUOISE,
   filterIcon: 4,
   filterIconColor: 10,
+  customRules: [],
 };
 
 /**

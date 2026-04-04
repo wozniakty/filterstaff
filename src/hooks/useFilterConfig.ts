@@ -23,6 +23,7 @@ function loadConfig(): FilterConfig {
       weaponTypes: parsed.weaponTypes ?? DEFAULT_FILTER_CONFIG.weaponTypes,
       buildDefiningAffixIds: parsed.buildDefiningAffixIds ?? [],
       badAffixIds: parsed.badAffixIds ?? [],
+      customRules: parsed.customRules ?? [],
     };
   } catch {
     return DEFAULT_FILTER_CONFIG;
@@ -128,7 +129,16 @@ export function useFilterConfig() {
       weaponTypes: imported.weaponTypes ?? prev.weaponTypes,
       buildDefiningAffixIds: imported.buildDefiningAffixIds ?? prev.buildDefiningAffixIds,
       badAffixIds: imported.badAffixIds ?? prev.badAffixIds,
+      customRules: imported.customRules ?? prev.customRules,
     }));
+  }, []);
+
+  const setCustomRules = useCallback((customRules: string[]) => {
+    setConfig((prev) => ({ ...prev, customRules }));
+  }, []);
+
+  const clearCustomRules = useCallback(() => {
+    setConfig((prev) => ({ ...prev, customRules: [] }));
   }, []);
 
   return {
@@ -143,5 +153,7 @@ export function useFilterConfig() {
     getAffixCategory,
     cycleAffixCategory,
     importConfig,
+    setCustomRules,
+    clearCustomRules,
   };
 }

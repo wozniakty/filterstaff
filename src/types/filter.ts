@@ -23,12 +23,16 @@ export interface FilterConfig {
   bdT6Style: BdRescueStyle;
   /** Visual treatment for BD T7 rescues */
   bdT7Style: BdRescueStyle;
+  /** LP/WW gradient tiers for uniques (highest LP first = highest priority) */
+  uniqueLpTiers: UniqueLpTier[];
   /** Color for items with affixes but below gradient threshold */
   bottomTierColor: ItemColorValue;
   /** Color used for corrupted items */
   corruptedColor: ItemColorValue;
   filterIcon: number;
   filterIconColor: number;
+  /** Raw XML rule strings (without <Order> tag) imported from a user's existing filter */
+  customRules: string[];
 }
 
 export interface GradientConfig {
@@ -58,6 +62,20 @@ export interface BdRescueStyle {
   beamSize: BeamSize;
   beamColor: BeamColorValue;
   soundId: SoundValue;
+}
+
+/** A single tier in the unique LP/WW gradient */
+export interface UniqueLpTier {
+  /** Minimum Legendary Potential to match */
+  minLp: number;
+  /** Minimum Weaver's Will to match */
+  minWw: number;
+  /** Whether to emphasize (bold) the item name */
+  emphasized: boolean;
+  soundId: SoundValue;
+  mapIconId: MapIconValue;
+  beamSize: BeamSize;
+  beamColor: BeamColorValue;
 }
 
 export type PlayerClass =

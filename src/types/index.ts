@@ -10,6 +10,7 @@ export type {
   GradientTier,
   BdMarkerStyle,
   BdRescueStyle,
+  UniqueLpTier,
   PlayerClass,
   EquipmentType,
   BeamSize,

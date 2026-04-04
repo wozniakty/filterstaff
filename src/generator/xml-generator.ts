@@ -1,6 +1,7 @@
 import type {
   FilterConfig,
   GradientTier,
+  UniqueLpTier,
   BeamSize,
   EquipmentType,
   IdolType,
@@ -13,6 +14,7 @@ import { Sound, MapIcon } from "../data/styling";
 import affixData from "../data/affixes.json";
 import categoryData from "../data/affix-categories.json";
 import type { PlayerClass } from "../types";
+import { injectOrderIntoRule, CUSTOM_RULES_START_LABEL, CUSTOM_RULES_END_LABEL } from "./xml-parser";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -116,6 +118,23 @@ ${indent}  <subTypes />
 ${indent}</Condition>`;
 }
 
+function potentialConditionXml(
+  minLp: number,
+  minWw: number,
+  indent: string
+): string {
+  return `${indent}<Condition i:type="PotentialCondition">
+${indent}  <MinLegendaryPotential>${minLp}</MinLegendaryPotential>
+${indent}  <MaxLegendaryPotential i:nil="true" />
+${indent}  <MinWeaversWill>${minWw}</MinWeaversWill>
+${indent}  <MaxWeaversWill i:nil="true" />
+${indent}  <MinWeaversTouch i:nil="true" />
+${indent}  <MaxWeaversTouch i:nil="true" />
+${indent}  <MinForgingPotential i:nil="true" />
+${indent}  <MaxForgingPotential i:nil="true" />
+${indent}</Condition>`;
+}
+
 function corruptionConditionXml(indent: string): string {
   return `${indent}<Condition i:type="CorruptionCondition">
 ${indent}  <Corruption>OnlyCorrupted</Corruption>
@@ -145,6 +164,7 @@ interface RuleOpts {
   beamOverride?: boolean;
   beamSize?: BeamSize;
   beamColor?: number;
+  isEnabled?: boolean;
   order: number;
 }
 
@@ -161,6 +181,7 @@ function ruleXml(opts: RuleOpts): string {
     beamOverride = true,
     beamSize = "NONE",
     beamColor = 0,
+    isEnabled = true,
     order,
   } = opts;
 
@@ -177,7 +198,7 @@ function ruleXml(opts: RuleOpts): string {
       ${conditionsBlock}
       <recolor>${recolor}</recolor>
       <color>${color}</color>
-      <isEnabled>true</isEnabled>
+      <isEnabled>${isEnabled}</isEnabled>
       <levelDependent_deprecated>false</levelDependent_deprecated>
       <minLvl_deprecated>0</minLvl_deprecated>
       <maxLvl_deprecated>0</maxLvl_deprecated>
@@ -194,15 +215,16 @@ function ruleXml(opts: RuleOpts): string {
 
 // ─── Layer Generators ───────────────────────────────────────────────────────
 
-function generateLayer0HideAll(order: number): string {
+function generateHideAll(order: number): string {
   return ruleXml({
     type: "HIDE",
     conditions: "",
+    nameOverride: "Hide All (catch-all)",
     order,
   });
 }
 
-function generateLayer1Gradient(
+function generateGradient(
   tiers: GradientTier[],
   allAffixIds: number[],
   bottomTierColor: number,
@@ -224,6 +246,7 @@ function generateLayer1Gradient(
       ),
       recolor: true,
       color: bottomTierColor,
+      nameOverride: "Gradient: bottom tier (any affix)",
       order: startOrder,
     })
   );
@@ -245,7 +268,8 @@ function generateLayer1Gradient(
         ),
         recolor: true,
         color: tier.color,
-        order: startOrder + 1 + (tiers.length - 1 - i),
+        nameOverride: `Gradient: tier ${i + 1} (sum>${tier.threshold})`,
+        order: startOrder + 1 + i,
       })
     );
   });
@@ -253,7 +277,7 @@ function generateLayer1Gradient(
   return rules;
 }
 
-function generateLayer2BdMarkers(
+function generateBdMarkers(
   tiers: GradientTier[],
   allAffixIds: number[],
   bdAffixIds: number[],
@@ -281,6 +305,7 @@ function generateLayer2BdMarkers(
       beamOverride: true,
       beamSize: config.bdMarkerStyle.beamSize,
       beamColor: config.bdMarkerStyle.beamColor,
+      nameOverride: "BD marker: bottom tier (any BD affix)",
       order: startOrder,
     })
   );
@@ -324,7 +349,8 @@ function generateLayer2BdMarkers(
         beamOverride: true,
         beamSize: config.bdMarkerStyle.beamSize,
         beamColor: config.bdMarkerStyle.beamColor,
-        order: startOrder + 1 + (tiers.length - 1 - i),
+        nameOverride: `BD marker: tier ${i + 1} (sum>${tier.threshold})`,
+        order: startOrder + 1 + i,
       })
     );
   });
@@ -353,6 +379,7 @@ function generateCorruptedGradient(
       ].join("\n"),
       recolor: true,
       color: bottomTierColor,
+      nameOverride: "Corrupted: bottom tier (any affix)",
       order: startOrder,
     })
   );
@@ -377,7 +404,8 @@ function generateCorruptedGradient(
         ].join("\n"),
         recolor: true,
         color: tier.color,
-        order: startOrder + 1 + (tiers.length - 1 - i),
+        nameOverride: `Corrupted: tier ${i + 1} (sum>${tier.threshold})`,
+        order: startOrder + 1 + i,
       })
     );
   });
@@ -385,125 +413,117 @@ function generateCorruptedGradient(
   return rules;
 }
 
-function generateLayer3BadAffixHides(
+function generateHideOtherClasses(
   config: FilterConfig,
+  order: number
+): string {
+  return ruleXml({
+    type: "HIDE",
+    conditions: classConditionXml(
+      OTHER_CLASSES[config.playerClass],
+      "        "
+    ),
+    nameOverride: "Hide other classes",
+    order,
+  });
+}
+
+function generateHideNormals(order: number): string {
+  return ruleXml({
+    type: "HIDE",
+    conditions: rarityConditionXml(["NORMAL"], "        "),
+    nameOverride: "Hide normal rarity",
+    order,
+  });
+}
+
+function generateBadAffixHides(
+  badAffixIds: number[],
   startOrder: number
 ): string[] {
+  if (badAffixIds.length === 0) return [];
+
   const rules: string[] = [];
   let order = startOrder;
 
-  // Hide other classes (always)
+  // Hide 3+ bad affixes (always)
   rules.push(
     ruleXml({
       type: "HIDE",
-      conditions: classConditionXml(
-        OTHER_CLASSES[config.playerClass],
+      conditions: affixConditionXml(
+        {
+          affixIds: badAffixIds,
+          minOnTheSameItem: 3,
+        },
         "        "
       ),
+      nameOverride: "Hide 3+ bad affixes",
       order: order++,
     })
   );
 
-  // Hide wrong weapon types (always)
-  const weaponsToHide = ALL_WEAPON_TYPES.filter(
-    (w) => !config.weaponTypes.includes(w)
-  );
-  if (weaponsToHide.length > 0) {
-    rules.push(
-      ruleXml({
-        type: "HIDE",
-        conditions: subTypeConditionXml(weaponsToHide, "        "),
-        order: order++,
-      })
-    );
-  }
-
-  // Hide normal rarity (always)
+  // Hide 2+ bad affixes (level gate)
   rules.push(
     ruleXml({
       type: "HIDE",
-      conditions: rarityConditionXml(["NORMAL"], "        "),
-      order: order++,
-    })
-  );
-
-  // Progressive bad affix hides (only if bad affixes are defined)
-  if (config.badAffixIds.length > 0) {
-    // Hide 3+ bad affixes (always)
-    rules.push(
-      ruleXml({
-        type: "HIDE",
-        conditions: affixConditionXml(
+      conditions: [
+        affixConditionXml(
           {
-            affixIds: config.badAffixIds,
-            minOnTheSameItem: 3,
+            affixIds: badAffixIds,
+            minOnTheSameItem: 2,
           },
           "        "
         ),
-        order: order++,
-      })
-    );
+        characterLevelConditionXml(
+          HIDE_LEVEL_GATES.twoBadAffixes,
+          100,
+          "        "
+        ),
+      ].join("\n"),
+      nameOverride: `Hide 2+ bad affixes (lvl ${HIDE_LEVEL_GATES.twoBadAffixes}+)`,
+      order: order++,
+    })
+  );
 
-    // Hide 2+ bad affixes (level 20+)
-    rules.push(
-      ruleXml({
-        type: "HIDE",
-        conditions: [
-          affixConditionXml(
-            {
-              affixIds: config.badAffixIds,
-              minOnTheSameItem: 2,
-            },
-            "        "
-          ),
-          characterLevelConditionXml(
-            HIDE_LEVEL_GATES.twoBadAffixes,
-            100,
-            "        "
-          ),
-        ].join("\n"),
-        order: order++,
-      })
-    );
-
-    // Hide 1+ bad at T5+ (level 40+)
-    rules.push(
-      ruleXml({
-        type: "HIDE",
-        conditions: [
-          affixConditionXml(
-            {
-              affixIds: config.badAffixIds,
-              comparsion: "MORE",
-              comparsionValue: 4,
-              minOnTheSameItem: 1,
-            },
-            "        "
-          ),
-          characterLevelConditionXml(
-            HIDE_LEVEL_GATES.oneBadHighTier,
-            100,
-            "        "
-          ),
-        ].join("\n"),
-        order: order++,
-      })
-    );
-  }
+  // Hide 1+ bad at T5+ (level gate)
+  rules.push(
+    ruleXml({
+      type: "HIDE",
+      conditions: [
+        affixConditionXml(
+          {
+            affixIds: badAffixIds,
+            comparsion: "MORE",
+            comparsionValue: 4,
+            minOnTheSameItem: 1,
+          },
+          "        "
+        ),
+        characterLevelConditionXml(
+          HIDE_LEVEL_GATES.oneBadHighTier,
+          100,
+          "        "
+        ),
+      ].join("\n"),
+      nameOverride: `Hide 1+ bad T5+ affix (lvl ${HIDE_LEVEL_GATES.oneBadHighTier}+)`,
+      order: order++,
+    })
+  );
 
   return rules;
 }
 
-function generateLayer3TotalTierHides(
+function generateTotalTierHides(
   allAffixIds: number[],
   startOrder: number
 ): string[] {
   const rules: string[] = [];
   let order = startOrder;
 
-  // Progressive total-tier hides — stricter gates checked first (higher priority)
-  // Iterate in reverse so the highest level/threshold rule gets the lowest order number.
-  for (let i = TOTAL_TIER_HIDE_GATES.length - 1; i >= 0; i--) {
+  // Progressive total-tier hides — stricter gates need higher priority (higher Order).
+  // Gates array is sorted by ascending level/threshold, so iterating forward gives
+  // the strictest gate (highest level) the highest Order number.
+  for (let i = 0; i < TOTAL_TIER_HIDE_GATES.length; i++) {
     const gate = TOTAL_TIER_HIDE_GATES[i];
     rules.push(
       ruleXml({
@@ -519,6 +539,7 @@ function generateLayer3TotalTierHides(
           ),
           characterLevelConditionXml(gate.level, 100, "        "),
         ].join("\n"),
+        nameOverride: `Hide total tiers <=${gate.minTiers} (lvl ${gate.level}+)`,
         order: order++,
       })
     );
@@ -527,127 +548,190 @@ function generateLayer3TotalTierHides(
   return rules;
 }
 
-function generateLayer4SafetyNetsAndRescues(
+function generateShowSetLegendary(order: number): string {
+  return ruleXml({
+    type: "SHOW",
+    conditions: rarityConditionXml(["SET", "LEGENDARY"], "        "),
+    soundId: Sound.DEFAULT,
+    mapIconId: MapIcon.DEFAULT,
+    beamOverride: false,
+    nameOverride: "Show all set & legendary",
+    order,
+  });
+}
+
+function generateShowIdols(order: number): string {
+  return ruleXml({
+    type: "SHOW",
+    conditions: subTypeConditionXml(ALL_IDOL_TYPES, "        "),
+    soundId: Sound.DEFAULT,
+    mapIconId: MapIcon.DEFAULT,
+    beamOverride: false,
+    nameOverride: "Show all idols",
+    order,
+  });
+}
+
+function generateHideWrongWeapons(
+  config: FilterConfig,
+  order: number
+): string[] {
+  const weaponsToHide = ALL_WEAPON_TYPES.filter(
+    (w) => !config.weaponTypes.includes(w)
+  );
+  if (weaponsToHide.length === 0) return [];
+  return [
+    ruleXml({
+      type: "HIDE",
+      conditions: subTypeConditionXml(weaponsToHide, "        "),
+      nameOverride: "Hide wrong weapon types",
+      order,
+    }),
+  ];
+}
+
+function generateBdRescues(
   config: FilterConfig,
   allAffixIds: number[],
   startOrder: number
 ): string[] {
+  if (config.buildDefiningAffixIds.length === 0) return [];
+
   const rules: string[] = [];
-  let order = startOrder;
   const tiers = config.gradient.tiers;
+  let order = startOrder;
 
-  // BD T6+ rescue (5 rules, one per gradient tier)
-  if (config.buildDefiningAffixIds.length > 0) {
-    for (let i = 0; i < tiers.length; i++) {
-      const tier = tiers[i];
-      rules.push(
-        ruleXml({
-          type: "SHOW",
-          conditions: [
-            affixConditionXml(
-              {
-                affixIds: allAffixIds,
-                comparsion: "ANY",
-                comparsionValue: 0,
-                combinedComparsion: "MORE",
-                combinedComparsionValue: tier.threshold,
-              },
-              "        "
-            ),
-            affixConditionXml(
-              {
-                affixIds: config.buildDefiningAffixIds,
-                comparsion: "MORE",
-                comparsionValue: 5,
-                minOnTheSameItem: 1,
-              },
-              "        "
-            ),
-          ].join("\n"),
-          recolor: true,
-          color: tier.color,
-          soundId: config.bdT6Style.soundId,
-          mapIconId: config.bdT6Style.mapIconId,
-          beamOverride: true,
-          beamSize: config.bdT6Style.beamSize,
-          beamColor: config.bdT6Style.beamColor,
-          order: order++,
-        })
-      );
-    }
-
-    // BD T7 rescue (5 rules, one per gradient tier)
-    for (let i = 0; i < tiers.length; i++) {
-      const tier = tiers[i];
-      rules.push(
-        ruleXml({
-          type: "SHOW",
-          conditions: [
-            affixConditionXml(
-              {
-                affixIds: allAffixIds,
-                comparsion: "ANY",
-                comparsionValue: 0,
-                combinedComparsion: "MORE",
-                combinedComparsionValue: tier.threshold,
-              },
-              "        "
-            ),
-            affixConditionXml(
-              {
-                affixIds: config.buildDefiningAffixIds,
-                comparsion: "MORE",
-                comparsionValue: 6,
-                minOnTheSameItem: 1,
-              },
-              "        "
-            ),
-          ].join("\n"),
-          recolor: true,
-          color: tier.color,
-          mapIconId: config.bdT7Style.mapIconId,
-          beamOverride: true,
-          beamSize: config.bdT7Style.beamSize,
-          beamColor: config.bdT7Style.beamColor,
-          soundId: config.bdT7Style.soundId,
-          order: order++,
-        })
-      );
-    }
+  // BD T6+ rescue (one rule per gradient tier)
+  for (let i = 0; i < tiers.length; i++) {
+    const tier = tiers[i];
+    rules.push(
+      ruleXml({
+        type: "SHOW",
+        conditions: [
+          affixConditionXml(
+            {
+              affixIds: allAffixIds,
+              comparsion: "ANY",
+              comparsionValue: 0,
+              combinedComparsion: "MORE",
+              combinedComparsionValue: tier.threshold,
+            },
+            "        "
+          ),
+          affixConditionXml(
+            {
+              affixIds: config.buildDefiningAffixIds,
+              comparsion: "MORE",
+              comparsionValue: 5,
+              minOnTheSameItem: 1,
+            },
+            "        "
+          ),
+        ].join("\n"),
+        recolor: true,
+        color: tier.color,
+        soundId: config.bdT6Style.soundId,
+        mapIconId: config.bdT6Style.mapIconId,
+        beamOverride: true,
+        beamSize: config.bdT6Style.beamSize,
+        beamColor: config.bdT6Style.beamColor,
+        nameOverride: `BD T6+ rescue: tier ${i + 1} (sum>${tier.threshold})`,
+        order: order++,
+      })
+    );
   }
 
-  // Show all idols — keep game defaults for styling
-  rules.push(
-    ruleXml({
-      type: "SHOW",
-      conditions: subTypeConditionXml(ALL_IDOL_TYPES, "        "),
-      soundId: Sound.DEFAULT,
-      mapIconId: MapIcon.DEFAULT,
-      beamOverride: false,
-      order: order++,
-    })
-  );
-
-  // Show unique/set/legendary (absolute top safety net)
-  // Uses DEFAULT to preserve game's native styling
-  rules.push(
-    ruleXml({
-      type: "SHOW",
-      conditions: rarityConditionXml(
-        ["UNIQUE", "SET", "LEGENDARY"],
-        "        "
-      ),
-      soundId: Sound.DEFAULT,
-      mapIconId: MapIcon.DEFAULT,
-      beamOverride: false,
-      order: order++,
-    })
-  );
+  // BD T7 rescue (one rule per gradient tier)
+  for (let i = 0; i < tiers.length; i++) {
+    const tier = tiers[i];
+    rules.push(
+      ruleXml({
+        type: "SHOW",
+        conditions: [
+          affixConditionXml(
+            {
+              affixIds: allAffixIds,
+              comparsion: "ANY",
+              comparsionValue: 0,
+              combinedComparsion: "MORE",
+              combinedComparsionValue: tier.threshold,
+            },
+            "        "
+          ),
+          affixConditionXml(
+            {
+              affixIds: config.buildDefiningAffixIds,
+              comparsion: "MORE",
+              comparsionValue: 6,
+              minOnTheSameItem: 1,
+            },
+            "        "
+          ),
+        ].join("\n"),
+        recolor: true,
+        color: tier.color,
+        mapIconId: config.bdT7Style.mapIconId,
+        beamOverride: true,
+        beamSize: config.bdT7Style.beamSize,
+        beamColor: config.bdT7Style.beamColor,
+        soundId: config.bdT7Style.soundId,
+        nameOverride: `BD T7 rescue: tier ${i + 1} (sum>${tier.threshold})`,
+        order: order++,
+      })
+    );
+  }
 
   return rules;
 }
 
 // ─── Main Generator ─────────────────────────────────────────────────────────
+
+function generateUniqueGradient(
+  tiers: UniqueLpTier[],
+  startOrder: number
+): string[] {
+  const rules: string[] = [];
+
+  // Fallback first (lowest Order = lowest priority, checked last)
+  rules.push(
+    ruleXml({
+      type: "SHOW",
+      conditions: rarityConditionXml(["UNIQUE"], "        "),
+      soundId: Sound.DEFAULT,
+      mapIconId: MapIcon.DEFAULT,
+      beamOverride: false,
+      nameOverride: "Unique: fallback (all uniques)",
+      order: startOrder,
+    })
+  );
+
+  // Tiers are provided highest-LP-first. Higher LP needs higher Order (higher
+  // priority) so a 3LP item is claimed by the 3LP rule before the 1LP rule.
+  // Reverse iteration: last tier (lowest LP) gets startOrder+1, first tier
+  // (highest LP) gets startOrder+tiers.length.
+  for (let i = tiers.length - 1; i >= 0; i--) {
+    const tier = tiers[i];
+    rules.push(
+      ruleXml({
+        type: "SHOW",
+        conditions: [
+          rarityConditionXml(["UNIQUE"], "        "),
+          potentialConditionXml(tier.minLp, tier.minWw, "        "),
+        ].join("\n"),
+        emphasized: tier.emphasized,
+        soundId: tier.soundId,
+        mapIconId: tier.mapIconId,
+        beamOverride: true,
+        beamSize: tier.beamSize,
+        beamColor: tier.beamColor,
+        nameOverride: `Unique: ${tier.minLp}+ LP / ${tier.minWw}+ WW`,
+        order: startOrder + tiers.length - i,
+      })
+    );
+  }
+
+  return rules;
+}
 
 export function generateFilterXml(config: FilterConfig): string {
   const allAffixIds = getAllAffixIds();
@@ -658,66 +742,106 @@ export function generateFilterXml(config: FilterConfig): string {
   const effectiveBadIds = [
     ...new Set([...config.badAffixIds, ...otherClassIds]),
   ];
-  const effectiveConfig = { ...config, badAffixIds: effectiveBadIds };
 
-  // Build all rules, tracking order.
-  // Order 0 = highest priority (top), highest order = lowest priority (bottom).
-  // We build bottom-up: Layer 0 gets the highest order number.
-
+  // Priority stack: higher Order number = higher priority (checked first by
+  // the game engine). Order 0 is the bottom of the list, checked last.
+  // Rules are listed here from LOWEST priority (Order 0) to HIGHEST.
+  // An item is claimed by the FIRST matching rule; no subsequent rules apply.
+  const allRules: string[] = [];
   let nextOrder = 0;
 
-  // Layer 4: Safety nets & rescues (highest priority = lowest order numbers)
-  const layer4Rules = generateLayer4SafetyNetsAndRescues(
-    effectiveConfig,
-    allAffixIds,
-    nextOrder
+  // ── Hide all (catch-all, lowest priority) ──
+  allRules.push(generateHideAll(nextOrder++));
+
+  // ── Basic quality gradient ──
+  const gradientRules = generateGradient(tiers, allAffixIds, config.bottomTierColor, nextOrder);
+  nextOrder += gradientRules.length;
+  allRules.push(...gradientRules);
+
+  // ── BD markers (gradient with beam/icon for BD affixes) ──
+  const bdMarkerRules = generateBdMarkers(
+    tiers, allAffixIds, config.buildDefiningAffixIds, config, nextOrder
   );
-  nextOrder += layer4Rules.length;
+  nextOrder += bdMarkerRules.length;
+  allRules.push(...bdMarkerRules);
 
-  // Layer 3b: Progressive total-tier hides (highest priority among Layer 3).
-  // Sits above corrupted gradient so low-tier corrupted items (uncraftable)
-  // get hidden rather than uselessly colored.
-  const layer3bRules = generateLayer3TotalTierHides(allAffixIds, nextOrder);
-  nextOrder += layer3bRules.length;
+  // ── Hide other classes ──
+  allRules.push(generateHideOtherClasses(config, nextOrder++));
 
-  // Corrupted gradient: decent corrupted items get gradient coloring.
-  // Below total-tier hides (junk corrupted hidden) but above bad-affix hides
-  // (bad affix composition is irrelevant on uncraftable items).
+  // ── Hide normals ──
+  allRules.push(generateHideNormals(nextOrder++));
+
+  // ── Hide bad affixes ──
+  const badAffixHides = generateBadAffixHides(effectiveBadIds, nextOrder);
+  nextOrder += badAffixHides.length;
+  allRules.push(...badAffixHides);
+
+  // ── Corrupted gradient ──
   const corruptedRules = generateCorruptedGradient(tiers, allAffixIds, config.bottomTierColor, nextOrder);
   nextOrder += corruptedRules.length;
+  allRules.push(...corruptedRules);
 
-  // Layer 3a: Class/weapon/rarity/bad-affix hides (below corrupted gradient)
-  const layer3aRules = generateLayer3BadAffixHides(effectiveConfig, nextOrder);
-  nextOrder += layer3aRules.length;
+  // ── Hide low total tiers at higher levels ──
+  const totalTierHides = generateTotalTierHides(allAffixIds, nextOrder);
+  nextOrder += totalTierHides.length;
+  allRules.push(...totalTierHides);
 
-  // Layer 2: BD markers
-  const layer2Rules = generateLayer2BdMarkers(
-    tiers,
-    allAffixIds,
-    config.buildDefiningAffixIds,
-    config,
-    nextOrder
+  // ── BD T6+/T7 rescues ──
+  const bdRescueRules = generateBdRescues(config, allAffixIds, nextOrder);
+  nextOrder += bdRescueRules.length;
+  allRules.push(...bdRescueRules);
+
+  // ── Hide wrong weapon types ──
+  const weaponHides = generateHideWrongWeapons(config, nextOrder);
+  nextOrder += weaponHides.length;
+  allRules.push(...weaponHides);
+
+  // ── Unique LP/WW gradient ──
+  const uniqueRules = generateUniqueGradient(config.uniqueLpTiers, nextOrder);
+  nextOrder += uniqueRules.length;
+  allRules.push(...uniqueRules);
+
+  // ── Show all idols ──
+  allRules.push(generateShowIdols(nextOrder++));
+
+  // ── Hide other-class idols (above show-all-idols so it takes priority) ──
+  allRules.push(
+    ruleXml({
+      type: "HIDE",
+      conditions: [
+        subTypeConditionXml(ALL_IDOL_TYPES, "        "),
+        classConditionXml(OTHER_CLASSES[config.playerClass], "        "),
+      ].join("\n"),
+      nameOverride: "Hide other-class idols",
+      order: nextOrder++,
+    })
   );
-  nextOrder += layer2Rules.length;
 
-  // Layer 1: Quality gradient
-  const layer1Rules = generateLayer1Gradient(tiers, allAffixIds, config.bottomTierColor, nextOrder);
-  nextOrder += layer1Rules.length;
+  // ── Show set & legendary ──
+  allRules.push(generateShowSetLegendary(nextOrder++));
 
-  // Layer 0: Hide all (lowest priority = highest order number)
-  const layer0Rule = generateLayer0HideAll(nextOrder);
-
-  // Combine all rules. XML order doesn't matter (Order field determines priority),
-  // but we write them bottom-to-top for readability matching the Bow Rogue style.
-  const allRules = [
-    layer0Rule,
-    ...layer1Rules,
-    ...layer2Rules,
-    ...layer3aRules,
-    ...corruptedRules,
-    ...layer3bRules,
-    ...layer4Rules,
-  ];
+  // ── Custom rules zone (highest priority — user intent wins) ──
+  allRules.push(
+    ruleXml({
+      type: "SHOW",
+      conditions: "",
+      nameOverride: CUSTOM_RULES_START_LABEL,
+      isEnabled: false,
+      order: nextOrder++,
+    })
+  );
+  for (const rawRule of config.customRules) {
+    allRules.push(injectOrderIntoRule(rawRule, nextOrder++));
+  }
+  allRules.push(
+    ruleXml({
+      type: "SHOW",
+      conditions: "",
+      nameOverride: CUSTOM_RULES_END_LABEL,
+      isEnabled: false,
+      order: nextOrder++,
+    })
+  );
 
   return `<?xml version="1.0" encoding="utf-8"?>
 <ItemFilter xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
