@@ -265,6 +265,83 @@ describe("XML Generator", () => {
   });
 });
 
+describe("Havoc candidate rules", () => {
+  it("always generates open prefix/suffix Havoc rules", () => {
+    const xml = generateFilterXml(DEFAULT_FILTER_CONFIG);
+    expect(xml).toContain("Havoc candidate: T7 + open prefix");
+    expect(xml).toContain("Havoc candidate: T7 + open suffix");
+  });
+
+  it("generates 3 rules when BD affixes are set", () => {
+    const xml = generateFilterXml(
+      makeConfig({ buildDefiningAffixIds: [50, 100] })
+    );
+    expect(xml).toContain("Havoc candidate: T7 + BD affix");
+    expect(xml).toContain("Havoc candidate: T7 + open prefix");
+    expect(xml).toContain("Havoc candidate: T7 + open suffix");
+  });
+
+  it("skips BD rule when no BD affixes", () => {
+    const xml = generateFilterXml(
+      makeConfig({ buildDefiningAffixIds: [] })
+    );
+    expect(xml).not.toContain("Havoc candidate: T7 + BD affix");
+    expect(xml).toContain("Havoc candidate: T7 + open prefix");
+    expect(xml).toContain("Havoc candidate: T7 + open suffix");
+  });
+
+  it("uses T7 tier check (comparsionValue 6)", () => {
+    const xml = generateFilterXml(DEFAULT_FILTER_CONFIG);
+    // Extract the full Rule containing "Havoc candidate: T7 + open prefix"
+    const nameIdx = xml.indexOf("Havoc candidate: T7 + open prefix");
+    const ruleStart = xml.lastIndexOf("<Rule>", nameIdx);
+    const ruleEnd = xml.indexOf("</Rule>", nameIdx) + 7;
+    const havocRule = xml.slice(ruleStart, ruleEnd);
+    expect(havocRule).toContain("<comparsion>MORE</comparsion>");
+    expect(havocRule).toContain("<comparsionValue>6</comparsionValue>");
+  });
+
+  it("includes OnlyUncorrupted condition", () => {
+    const xml = generateFilterXml(DEFAULT_FILTER_CONFIG);
+    const nameIdx = xml.indexOf("Havoc candidate: T7 + open prefix");
+    const ruleStart = xml.lastIndexOf("<Rule>", nameIdx);
+    const ruleEnd = xml.indexOf("</Rule>", nameIdx) + 7;
+    const havocRule = xml.slice(ruleStart, ruleEnd);
+    expect(havocRule).toContain("OnlyUncorrupted");
+  });
+
+  it("includes AffixCountCondition for open slots", () => {
+    const xml = generateFilterXml(DEFAULT_FILTER_CONFIG);
+    expect(xml).toContain("AffixCountCondition");
+    expect(xml).toContain("<maxPrefixes>1</maxPrefixes>");
+    expect(xml).toContain("<maxSuffixes>1</maxSuffixes>");
+  });
+
+  it("Havoc Order sits between total-tier hides and BD rescues", () => {
+    const xml = generateFilterXml(
+      makeConfig({ buildDefiningAffixIds: [50] })
+    );
+    const havocOrder = xml.match(
+      /Havoc candidate: T7 \+ BD affix[\s\S]*?<Order>(\d+)<\/Order>/
+    );
+    const totalTierOrder = xml.match(
+      /Hide total tiers[\s\S]*?<Order>(\d+)<\/Order>/g
+    );
+    const bdRescueOrder = xml.match(
+      /BD T6\+ rescue[\s\S]*?<Order>(\d+)<\/Order>/
+    );
+    expect(havocOrder).not.toBeNull();
+    expect(totalTierOrder).not.toBeNull();
+    expect(bdRescueOrder).not.toBeNull();
+
+    const lastTotalTierOrder = Number(
+      totalTierOrder![totalTierOrder!.length - 1].match(/<Order>(\d+)<\/Order>/)![1]
+    );
+    expect(Number(havocOrder![1])).toBeGreaterThan(lastTotalTierOrder);
+    expect(Number(havocOrder![1])).toBeLessThan(Number(bdRescueOrder![1]));
+  });
+});
+
 describe("Config round-trip", () => {
   it("export and import produce equivalent selections", () => {
     const original = makeConfig({

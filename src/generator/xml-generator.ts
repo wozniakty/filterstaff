@@ -10,7 +10,7 @@ import { OTHER_CLASSES } from "../data/classes";
 import { ALL_IDOL_TYPES } from "../data/equipment-types";
 import { ALL_WEAPON_TYPES } from "../data/equipment-types";
 import { HIDE_LEVEL_GATES, TOTAL_TIER_HIDE_GATES } from "../data/defaults";
-import { Sound, MapIcon } from "../data/styling";
+import { Sound, MapIcon, ItemColor, BeamColor } from "../data/styling";
 import affixData from "../data/affixes.json";
 import categoryData from "../data/affix-categories.json";
 import type { PlayerClass } from "../types";
@@ -138,6 +138,37 @@ ${indent}</Condition>`;
 function corruptionConditionXml(indent: string): string {
   return `${indent}<Condition i:type="CorruptionCondition">
 ${indent}  <Corruption>OnlyCorrupted</Corruption>
+${indent}</Condition>`;
+}
+
+function uncorruptedConditionXml(indent: string): string {
+  return `${indent}<Condition i:type="CorruptionCondition">
+${indent}  <Corruption>OnlyUncorrupted</Corruption>
+${indent}</Condition>`;
+}
+
+interface AffixCountConditionOpts {
+  minPrefixes?: number | null;
+  maxPrefixes?: number | null;
+  minSuffixes?: number | null;
+  maxSuffixes?: number | null;
+}
+
+function affixCountConditionXml(
+  opts: AffixCountConditionOpts,
+  indent: string
+): string {
+  const tag = (name: string, v: number | null | undefined) =>
+    v != null
+      ? `${indent}  <${name}>${v}</${name}>`
+      : `${indent}  <${name} i:nil="true" />`;
+
+  return `${indent}<Condition i:type="AffixCountCondition">
+${tag("minPrefixes", opts.minPrefixes)}
+${tag("maxPrefixes", opts.maxPrefixes)}
+${tag("minSuffixes", opts.minSuffixes)}
+${tag("maxSuffixes", opts.maxSuffixes)}
+${indent}  <sealedType>Any</sealedType>
 ${indent}</Condition>`;
 }
 
@@ -548,6 +579,33 @@ function generateTotalTierHides(
   return rules;
 }
 
+function generateShowT8(allAffixIds: number[], order: number): string {
+  return ruleXml({
+    type: "SHOW",
+    conditions: affixConditionXml(
+      {
+        affixIds: allAffixIds,
+        comparsion: "MORE",
+        comparsionValue: 7,
+        minOnTheSameItem: 1,
+        combinedComparsion: "ANY",
+        combinedComparsionValue: 7,
+      },
+      "        "
+    ),
+    recolor: true,
+    color: ItemColor.RED,
+    emphasized: true,
+    soundId: Sound.COMET,
+    mapIconId: MapIcon.LEGENDARY,
+    beamOverride: true,
+    beamSize: "LARGEST",
+    beamColor: BeamColor.RED,
+    nameOverride: "T8 affix",
+    order,
+  });
+}
+
 function generateShowSetLegendary(order: number): string {
   return ruleXml({
     type: "SHOW",
@@ -590,95 +648,226 @@ function generateHideWrongWeapons(
   ];
 }
 
-function generateBdRescues(
+function generateHavocCandidates(
   config: FilterConfig,
   allAffixIds: number[],
   startOrder: number
 ): string[] {
-  if (config.buildDefiningAffixIds.length === 0) return [];
 
   const rules: string[] = [];
-  const tiers = config.gradient.tiers;
   let order = startOrder;
 
-  // BD T6+ rescue (one rule per gradient tier)
-  for (let i = 0; i < tiers.length; i++) {
-    const tier = tiers[i];
+  // Shared condition: any affix at T7 (comparsionValue 6 = tier > 6 = T7+)
+  const t7Condition = affixConditionXml(
+    {
+      affixIds: allAffixIds,
+      comparsion: "MORE",
+      comparsionValue: 6,
+      minOnTheSameItem: 1,
+    },
+    "        "
+  );
+
+  const havocRuleOpts = {
+    type: "SHOW" as const,
+    recolor: true,
+    color: config.havoc.color,
+    emphasized: config.havoc.emphasized,
+    soundId: config.havoc.style.soundId,
+    mapIconId: config.havoc.style.mapIconId,
+    beamOverride: true,
+    beamSize: config.havoc.style.beamSize,
+    beamColor: config.havoc.style.beamColor,
+  };
+
+  // Rule 1: T7 + BD affix present (any tier) + uncorrupted
+  if (config.buildDefiningAffixIds.length > 0) {
     rules.push(
       ruleXml({
-        type: "SHOW",
+        ...havocRuleOpts,
         conditions: [
-          affixConditionXml(
-            {
-              affixIds: allAffixIds,
-              comparsion: "ANY",
-              comparsionValue: 0,
-              combinedComparsion: "MORE",
-              combinedComparsionValue: tier.threshold,
-            },
-            "        "
-          ),
+          t7Condition,
           affixConditionXml(
             {
               affixIds: config.buildDefiningAffixIds,
-              comparsion: "MORE",
-              comparsionValue: 5,
               minOnTheSameItem: 1,
             },
             "        "
           ),
+          uncorruptedConditionXml("        "),
         ].join("\n"),
-        recolor: true,
-        color: tier.color,
-        soundId: config.bdT6Style.soundId,
-        mapIconId: config.bdT6Style.mapIconId,
-        beamOverride: true,
-        beamSize: config.bdT6Style.beamSize,
-        beamColor: config.bdT6Style.beamColor,
-        nameOverride: `BD T6+ rescue: tier ${i + 1} (sum>${tier.threshold})`,
+        nameOverride: "Havoc candidate: T7 + BD affix",
         order: order++,
       })
     );
   }
 
-  // BD T7 rescue (one rule per gradient tier)
-  for (let i = 0; i < tiers.length; i++) {
-    const tier = tiers[i];
-    rules.push(
-      ruleXml({
-        type: "SHOW",
-        conditions: [
-          affixConditionXml(
-            {
-              affixIds: allAffixIds,
-              comparsion: "ANY",
-              comparsionValue: 0,
-              combinedComparsion: "MORE",
-              combinedComparsionValue: tier.threshold,
-            },
-            "        "
-          ),
-          affixConditionXml(
-            {
-              affixIds: config.buildDefiningAffixIds,
-              comparsion: "MORE",
-              comparsionValue: 6,
-              minOnTheSameItem: 1,
-            },
-            "        "
-          ),
-        ].join("\n"),
-        recolor: true,
-        color: tier.color,
-        mapIconId: config.bdT7Style.mapIconId,
-        beamOverride: true,
-        beamSize: config.bdT7Style.beamSize,
-        beamColor: config.bdT7Style.beamColor,
-        soundId: config.bdT7Style.soundId,
-        nameOverride: `BD T7 rescue: tier ${i + 1} (sum>${tier.threshold})`,
-        order: order++,
-      })
-    );
+  // Rule 2: T7 + open prefix slot + uncorrupted
+  rules.push(
+    ruleXml({
+      ...havocRuleOpts,
+      conditions: [
+        t7Condition,
+        affixCountConditionXml({ maxPrefixes: 1 }, "        "),
+        uncorruptedConditionXml("        "),
+      ].join("\n"),
+      nameOverride: "Havoc candidate: T7 + open prefix",
+      order: order++,
+    })
+  );
+
+  // Rule 3: T7 + open suffix slot + uncorrupted
+  rules.push(
+    ruleXml({
+      ...havocRuleOpts,
+      conditions: [
+        t7Condition,
+        affixCountConditionXml({ maxSuffixes: 1 }, "        "),
+        uncorruptedConditionXml("        "),
+      ].join("\n"),
+      nameOverride: "Havoc candidate: T7 + open suffix",
+      order: order++,
+    })
+  );
+
+  return rules;
+}
+
+function generateBdRescues(
+  config: FilterConfig,
+  allAffixIds: number[],
+  startOrder: number
+): string[] {
+  const rules: string[] = [];
+  const tiers = config.gradient.tiers;
+  const goodAffixIds = allAffixIds.filter(id => !config.badAffixIds.includes(id));
+  let order = startOrder;
+
+  // BD T6+ rescue (one rule per gradient tier)
+  if (config.buildDefiningAffixIds.length > 0) {
+    for (let i = 0; i < tiers.length; i++) {
+      const tier = tiers[i];
+      rules.push(
+        ruleXml({
+          type: "SHOW",
+          conditions: [
+            affixConditionXml(
+              {
+                affixIds: allAffixIds,
+                comparsion: "ANY",
+                comparsionValue: 0,
+                combinedComparsion: "MORE",
+                combinedComparsionValue: tier.threshold,
+              },
+              "        "
+            ),
+            affixConditionXml(
+              {
+                affixIds: config.buildDefiningAffixIds,
+                comparsion: "MORE",
+                comparsionValue: 5,
+                minOnTheSameItem: 1,
+              },
+              "        "
+            ),
+          ].join("\n"),
+          recolor: true,
+          color: tier.color,
+          soundId: config.bdT6Style.soundId,
+          mapIconId: config.bdT6Style.mapIconId,
+          beamOverride: true,
+          beamSize: config.bdT6Style.beamSize,
+          beamColor: config.bdT6Style.beamColor,
+          nameOverride: `BD T6+ rescue: tier ${i + 1} (sum>${tier.threshold})`,
+          order: order++,
+        })
+      );
+    }
+  }
+
+  // Good T7 rescue — any non-bad affix at T7 (one rule per gradient tier)
+  if (goodAffixIds.length > 0) {
+    for (let i = 0; i < tiers.length; i++) {
+      const tier = tiers[i];
+      rules.push(
+        ruleXml({
+          type: "SHOW",
+          conditions: [
+            affixConditionXml(
+              {
+                affixIds: allAffixIds,
+                comparsion: "ANY",
+                comparsionValue: 0,
+                combinedComparsion: "MORE",
+                combinedComparsionValue: tier.threshold,
+              },
+              "        "
+            ),
+            affixConditionXml(
+              {
+                affixIds: goodAffixIds,
+                comparsion: "MORE",
+                comparsionValue: 6,
+                minOnTheSameItem: 1,
+              },
+              "        "
+            ),
+          ].join("\n"),
+          recolor: true,
+          color: tier.color,
+          mapIconId: config.bdT7Style.mapIconId,
+          beamOverride: true,
+          beamSize: config.bdT7Style.beamSize,
+          beamColor: config.bdT7Style.beamColor,
+          soundId: config.bdT7Style.soundId,
+          nameOverride: `Good T7 rescue: tier ${i + 1} (sum>${tier.threshold})`,
+          order: order++,
+        })
+      );
+    }
+  }
+
+  // BD T7 rescue — emphasized (one rule per gradient tier)
+  if (config.buildDefiningAffixIds.length > 0) {
+    for (let i = 0; i < tiers.length; i++) {
+      const tier = tiers[i];
+      rules.push(
+        ruleXml({
+          type: "SHOW",
+          conditions: [
+            affixConditionXml(
+              {
+                affixIds: allAffixIds,
+                comparsion: "ANY",
+                comparsionValue: 0,
+                combinedComparsion: "MORE",
+                combinedComparsionValue: tier.threshold,
+              },
+              "        "
+            ),
+            affixConditionXml(
+              {
+                affixIds: config.buildDefiningAffixIds,
+                comparsion: "MORE",
+                comparsionValue: 6,
+                minOnTheSameItem: 1,
+              },
+              "        "
+            ),
+          ].join("\n"),
+          recolor: true,
+          color: tier.color,
+          emphasized: true,
+          mapIconId: config.bdT7Style.mapIconId,
+          beamOverride: true,
+          beamSize: config.bdT7Style.beamSize,
+          beamColor: config.bdT7Style.beamColor,
+          soundId: config.bdT7Style.soundId,
+          nameOverride: `BD T7 rescue: tier ${i + 1} (sum>${tier.threshold})`,
+          order: order++,
+        })
+      );
+    }
   }
 
   return rules;
@@ -786,7 +975,12 @@ export function generateFilterXml(config: FilterConfig): string {
   nextOrder += totalTierHides.length;
   allRules.push(...totalTierHides);
 
-  // ── BD T6+/T7 rescues ──
+  // ── Havoc candidates (above hides, below BD rescues) ──
+  const havocRules = generateHavocCandidates(config, allAffixIds, nextOrder);
+  nextOrder += havocRules.length;
+  allRules.push(...havocRules);
+
+  // ── BD T6+/T7 rescues + Good T7 rescue ──
   const bdRescueRules = generateBdRescues(config, allAffixIds, nextOrder);
   nextOrder += bdRescueRules.length;
   allRules.push(...bdRescueRules);
@@ -819,6 +1013,9 @@ export function generateFilterXml(config: FilterConfig): string {
 
   // ── Show set & legendary ──
   allRules.push(generateShowSetLegendary(nextOrder++));
+
+  // ── Show T8 affix items ──
+  allRules.push(generateShowT8(allAffixIds, nextOrder++));
 
   // ── Custom rules zone (highest priority — user intent wins) ──
   allRules.push(

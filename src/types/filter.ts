@@ -31,6 +31,8 @@ export interface FilterConfig {
   corruptedColor: ItemColorValue;
   filterIcon: number;
   filterIconColor: number;
+  /** Havoc candidate rule configuration */
+  havoc: HavocConfig;
   /** Raw XML rule strings (without <Order> tag) imported from a user's existing filter */
   customRules: string[];
 }
@@ -62,6 +64,22 @@ export interface BdRescueStyle {
   beamSize: BeamSize;
   beamColor: BeamColorValue;
   soundId: SoundValue;
+}
+
+export interface HavocStyle {
+  soundId: SoundValue;
+  mapIconId: MapIconValue;
+  beamSize: BeamSize;
+  beamColor: BeamColorValue;
+}
+
+export interface HavocConfig {
+  /** Flat recolor for Havoc candidates */
+  color: ItemColorValue;
+  /** Whether to emphasize (bold) the item name */
+  emphasized: boolean;
+  /** Visual styling */
+  style: HavocStyle;
 }
 
 /** A single tier in the unique LP/WW gradient */

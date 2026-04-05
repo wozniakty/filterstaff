@@ -1,4 +1,4 @@
-import type { FilterConfig, GradientTier, UniqueLpTier } from "../types";
+import type { FilterConfig, GradientTier, UniqueLpTier, HavocConfig } from "../types";
 import { ItemColor, Sound, MapIcon, BeamColor } from "./styling";
 
 /**
@@ -48,6 +48,18 @@ export const DEFAULT_UNIQUE_LP_TIERS: UniqueLpTier[] = [
   },
 ];
 
+/** Default Havoc candidate configuration (disabled by default) */
+export const DEFAULT_HAVOC_CONFIG: HavocConfig = {
+  color: ItemColor.ORANGE,
+  emphasized: true,
+  style: {
+    soundId: Sound.NONE,
+    mapIconId: MapIcon.DEFAULT,
+    beamSize: "LARGE",
+    beamColor: BeamColor.ORANGE,
+  },
+};
+
 /** Default filter configuration */
 export const DEFAULT_FILTER_CONFIG: FilterConfig = {
   name: "MyFilter",
@@ -78,6 +90,7 @@ export const DEFAULT_FILTER_CONFIG: FilterConfig = {
     beamColor: BeamColor.RED,
     soundId: Sound.BEGIN,
   },
+  havoc: DEFAULT_HAVOC_CONFIG,
   uniqueLpTiers: DEFAULT_UNIQUE_LP_TIERS,
   bottomTierColor: ItemColor.GRAY,
   corruptedColor: ItemColor.TURQUOISE,

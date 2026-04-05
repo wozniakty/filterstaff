@@ -10,6 +10,8 @@ export type {
   GradientTier,
   BdMarkerStyle,
   BdRescueStyle,
+  HavocConfig,
+  HavocStyle,
   UniqueLpTier,
   PlayerClass,
   EquipmentType,
