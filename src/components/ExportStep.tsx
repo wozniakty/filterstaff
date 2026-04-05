@@ -5,13 +5,15 @@ import { generateFilterXml } from "../generator/xml-generator";
 interface Props {
   config: FilterConfig;
   onImportConfig: (config: FilterConfig) => void;
+  onResetConfig: () => void;
 }
 
-export function ExportStep({ config, onImportConfig }: Props) {
+export function ExportStep({ config, onImportConfig, onResetConfig }: Props) {
   const xml = useMemo(() => generateFilterXml(config), [config]);
   const [copied, setCopied] = useState(false);
   const [copiedConfig, setCopiedConfig] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const ruleCount = (xml.match(/<Rule>/g) || []).length;
@@ -96,6 +98,17 @@ export function ExportStep({ config, onImportConfig }: Props) {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const handleSaveAndReset = () => {
+    handleExportConfig();
+    setShowResetConfirm(false);
+    onResetConfig();
+  };
+
+  const handleResetWithoutSaving = () => {
+    setShowResetConfirm(false);
+    onResetConfig();
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       {/* Summary */}
@@ -172,6 +185,43 @@ export function ExportStep({ config, onImportConfig }: Props) {
             {importError}
           </div>
         )}
+        <div style={{ marginTop: "1rem", borderTop: "1px solid var(--border)", paddingTop: "1rem" }}>
+          <button
+            onClick={() => setShowResetConfirm(true)}
+            style={btnDanger}
+          >
+            New Filter
+          </button>
+          {showResetConfirm && (
+            <div
+              style={{
+                marginTop: "0.75rem",
+                padding: "1rem",
+                background: "var(--bg-secondary)",
+                border: "1px solid var(--border)",
+                borderRadius: 6,
+              }}
+            >
+              <p style={{ marginBottom: "0.75rem", fontWeight: 600 }}>
+                Start a new filter? This will clear all current selections.
+              </p>
+              <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+                <button onClick={handleSaveAndReset} style={btnSecondary}>
+                  Save & Reset
+                </button>
+                <button onClick={handleResetWithoutSaving} style={btnDanger}>
+                  Reset without saving
+                </button>
+                <button
+                  onClick={() => setShowResetConfirm(false)}
+                  style={btnSecondary}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </section>
 
       {/* XML Preview */}
@@ -225,6 +275,12 @@ const btnSecondary: React.CSSProperties = {
 const btnSuccess: React.CSSProperties = {
   ...btnBase,
   background: "#4caf50",
+  color: "#fff",
+};
+
+const btnDanger: React.CSSProperties = {
+  ...btnBase,
+  background: "#c62828",
   color: "#fff",
 };
 

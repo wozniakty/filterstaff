@@ -21,7 +21,13 @@ export default function App() {
     importConfig,
     setCustomRules,
     clearCustomRules,
+    resetConfig,
   } = useFilterConfig();
+
+  const handleResetConfig = () => {
+    resetConfig();
+    setStep("class");
+  };
 
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", padding: "2rem" }}>
@@ -90,7 +96,7 @@ export default function App() {
           />
         )}
         {step === "export" && (
-          <ExportStep config={config} onImportConfig={importConfig} />
+          <ExportStep config={config} onImportConfig={importConfig} onResetConfig={handleResetConfig} />
         )}
       </div>
     </div>

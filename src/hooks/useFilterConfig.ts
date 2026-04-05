@@ -141,6 +141,10 @@ export function useFilterConfig() {
     setConfig((prev) => ({ ...prev, customRules: [] }));
   }, []);
 
+  const resetConfig = useCallback(() => {
+    setConfig(DEFAULT_FILTER_CONFIG);
+  }, []);
+
   return {
     config,
     setConfig,
@@ -155,5 +159,6 @@ export function useFilterConfig() {
     importConfig,
     setCustomRules,
     clearCustomRules,
+    resetConfig,
   };
 }
