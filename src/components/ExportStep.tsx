@@ -2,6 +2,8 @@ import { useMemo, useState, useRef } from "react";
 import type { FilterConfig } from "../types";
 import { generateFilterXml } from "../generator/xml-generator";
 
+const PREVIEW_LINE_LIMIT = 300;
+
 interface Props {
   config: FilterConfig;
   onImportConfig: (config: FilterConfig) => void;
@@ -17,6 +19,17 @@ export function ExportStep({ config, onImportConfig, onResetConfig }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const ruleCount = (xml.match(/<Rule>/g) || []).length;
+
+  // The full XML is ~1 MB / ~36k lines (mostly affix ID lists). Rendering all
+  // of it in the DOM makes the tab crawl, so the preview shows only the head.
+  const { previewText, previewLines, totalLines } = useMemo(() => {
+    const lines = xml.split("\n");
+    return {
+      previewText: lines.slice(0, PREVIEW_LINE_LIMIT).join("\n"),
+      previewLines: Math.min(lines.length, PREVIEW_LINE_LIMIT),
+      totalLines: lines.length,
+    };
+  }, [xml]);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(xml);
@@ -227,6 +240,17 @@ export function ExportStep({ config, onImportConfig, onResetConfig }: Props) {
       {/* XML Preview */}
       <section>
         <h3 style={{ marginBottom: "0.5rem" }}>XML Preview</h3>
+        <p
+          style={{
+            fontSize: "0.8rem",
+            color: "var(--text-secondary)",
+            marginBottom: "0.5rem",
+          }}
+        >
+          Showing first {previewLines.toLocaleString()} of{" "}
+          {totalLines.toLocaleString()} lines. Use Download or Copy XML for the
+          full filter.
+        </p>
         <pre
           style={{
             background: "var(--bg-secondary)",
@@ -237,11 +261,10 @@ export function ExportStep({ config, onImportConfig, onResetConfig }: Props) {
             overflowY: "auto",
             fontSize: "0.75rem",
             lineHeight: 1.4,
-            whiteSpace: "pre-wrap",
-            wordBreak: "break-all",
+            overflowX: "auto",
           }}
         >
-          {xml}
+          {previewText}
         </pre>
       </section>
     </div>
